@@ -8,6 +8,8 @@ CompScript is designed primarily for CubingUSA Nationals and other large champio
 
 Node must be installed on your machine.
 
+### Web UI
+
 ```
 $ npm install
 $ npm run dev-server
@@ -19,6 +21,34 @@ Running the development server will use uses a dev WCA environment running on th
 2. Make a copy of the `.env.DEV` file, such as `.env.PROD`. This file should not be committed; `.gitignore` should automatically ignore it.
 3. Replace `WCA_HOST`, `API_KEY`, and `API_SECRET` with the production values. You should also consider changing the `COOKIE_SECRET` to a new value, and to change `PORT` to 3033 to distinguish from the dev version.
 4. Run with `$ ENV=PROD node main.js`, using the file suffix you used above.
+
+### Command Line Interface (CLI)
+
+CompScript can also be run from the command line without starting the web UI:
+
+```bash
+# Install the CLI globally
+$ npm link
+
+# Run a script file
+$ compscript <competitionId> <file>
+
+# Run an inline script
+$ compscript <competitionId> --script "<script>"
+
+# Examples
+$ compscript KentFall2025 examples/hello.cs
+$ compscript CubingUSANationals2024 -s 'Header("Registered Competitors")'
+$ compscript MyComp2025 script.cs --dry-run=false  # Apply mutations (requires auth)
+```
+
+**CLI Options:**
+- `--script, -s`: Execute an inline script instead of a file
+- `--dry-run, -d`: Run in dry-run mode (default: true). Set to false to apply mutations
+- `--clear-cache, -c`: Clear the competition cache before running (default: false)
+- `--help, -h`: Show help
+
+**Note:** The CLI uses public WCIF data and caches it locally. Mutations (changes to the competition) require authentication and are disabled by default (dry-run mode).
 
 ## Scripts
 

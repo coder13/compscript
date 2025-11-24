@@ -12,12 +12,16 @@
     "openid-client": "^5.6.5",
     "peggy": "^4.0.2",
     "pug": "^3.0.3",
-    "serve-favicon": "^2.5.0"
+    "serve-favicon": "^2.5.0",
+    "yargs": "^18.0.0"
   },
   "name": "natshelper",
   "description": "Helper app for CubingUSA Nats scheduling.",
   "version": "1.0.0",
   "main": "main.js",
+  "bin": {
+    "compscript": "./bin/compscript.js"
+  },
   "scripts": {
     "dev-server": "ENV=DEV npx nodemon -i wcif_data .",
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -186,10 +186,58 @@ async function redirectIfNotLoggedIn(req, res, next) {
   res.redirect(uri);
 }
 
+// CLI-friendly function to get WCIF without authentication
+async function getWcifForCLI(competitionId) {
+  var shouldFetch = false
+  try {
+    var stat = fs.statSync(cachePath(competitionId))
+    if (stat.mtimeMs < Date.now() - 6 * 60 * 60 * 1000) {
+      shouldFetch = true
+    }
+  } catch (e) {
+    shouldFetch = true
+  }
+  
+  if (shouldFetch) {
+    console.log('Fetching WCIF from WCA API...')
+    // Try to fetch public WCIF without authentication
+    const https = require('https')
+    const url = wcaUrl(`/api/v0/competitions/${competitionId}/wcif/public`)
+    
+    return new Promise((resolve, reject) => {
+      https.get(url, (res) => {
+        let data = ''
+        res.on('data', (chunk) => { data += chunk })
+        res.on('end', () => {
+          try {
+            const wcif = JSON.parse(data)
+            if (wcif.error) {
+              reject(new Error(wcif.error))
+            } else {
+              fs.writeFileSync(cachePath(competitionId), JSON.stringify(wcif))
+              console.log('WCIF fetched and cached.')
+              resolve(wcif)
+            }
+          } catch (e) {
+            reject(e)
+          }
+        })
+      }).on('error', (err) => {
+        reject(err)
+      })
+    })
+  } else {
+    console.log('Reading cached WCIF...')
+    var wcif = fs.readFileSync(cachePath(competitionId))
+    return JSON.parse(wcif)
+  }
+}
+
 module.exports = {
   router: router,
   getWcaApi: getWcaApi,
   getWcif: getWcif,
+  getWcifForCLI: getWcifForCLI,
   redirectIfNotLoggedIn: redirectIfNotLoggedIn,
   patchWcif: patchWcif,
   patchWcifWithRetries: patchWcifWithRetries,
