@@ -1,4 +1,5 @@
 import { TextDocument } from "vscode-languageserver-textdocument";
+import { Location, Range } from "vscode-languageserver/node";
 import { FunctionMetadata } from "./types";
 
 /**
@@ -18,9 +19,20 @@ export function extractUserDefinedFunctions(
   while ((match = defineRegex.exec(text)) !== null) {
     const functionName = match[1];
     const functionBody = match[2];
+    const matchStart = match.index;
+    const matchEnd = match.index + match[0].length;
+
+    // Find the position of the function name within the match
+    const nameStart = match.index + match[0].indexOf(`"${functionName}"`);
+    const nameEnd = nameStart + functionName.length + 2; // +2 for quotes
 
     // Extract argument definitions from the body: {number, Type}
     const args = extractArguments(functionBody);
+
+    const startPos = textDocument.positionAt(matchStart);
+    const endPos = textDocument.positionAt(matchEnd);
+    const nameStartPos = textDocument.positionAt(nameStart + 1); // +1 to skip opening quote
+    const nameEndPos = textDocument.positionAt(nameEnd - 1); // -1 to skip closing quote
 
     functions.push({
       name: functionName,
@@ -28,6 +40,11 @@ export function extractUserDefinedFunctions(
       args,
       docs: `User-defined function: ${functionName}`,
       isUserDefined: true,
+      location: Location.create(
+        textDocument.uri,
+        Range.create(startPos, endPos)
+      ),
+      nameRange: Range.create(nameStartPos, nameEndPos),
     });
   }
 

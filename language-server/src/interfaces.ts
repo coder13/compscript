@@ -8,6 +8,8 @@ import {
   Diagnostic,
   Hover,
   SignatureHelp,
+  DocumentSymbol,
+  Location,
 } from "vscode-languageserver/node";
 import { FunctionMetadata } from "./types";
 
@@ -82,6 +84,31 @@ export interface ISignatureHelpProvider {
  */
 export interface IDiagnosticsProvider {
   validate(document: TextDocument): Promise<Diagnostic[]>;
+}
+
+/**
+ * Provider for LSP document symbols
+ */
+export interface IDocumentSymbolProvider {
+  provide(document: TextDocument): DocumentSymbol[];
+}
+
+/**
+ * Provider for LSP go to definition
+ */
+export interface IDefinitionProvider {
+  provide(document: TextDocument, offset: number): Location | null;
+}
+
+/**
+ * Provider for LSP find references
+ */
+export interface IReferencesProvider {
+  provide(
+    document: TextDocument,
+    offset: number,
+    includeDeclaration: boolean
+  ): Location[];
 }
 
 /**

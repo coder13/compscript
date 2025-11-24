@@ -2,6 +2,8 @@
  * Shared type definitions for the CompScript language server
  */
 
+import { Range, Location } from "vscode-languageserver/node";
+
 export interface FunctionMetadata {
   name: string;
   outputType: string;
@@ -9,6 +11,8 @@ export interface FunctionMetadata {
   docs?: string;
   genericParams?: string[];
   isUserDefined?: boolean;
+  location?: Location;
+  nameRange?: Range;
 }
 
 export interface FunctionArgument {
@@ -19,4 +23,17 @@ export interface FunctionArgument {
   canBeExternal?: boolean;
   nullable?: boolean;
   docs?: string;
+}
+
+export interface SymbolInfo {
+  name: string;
+  kind: string;
+  location: Location;
+  nameRange: Range;
+}
+
+export interface FunctionReference {
+  name: string;
+  location: Location;
+  range: Range;
 }

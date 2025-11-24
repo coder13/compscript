@@ -7,6 +7,8 @@ import {
   TextDocumentSyncKind,
   InitializeResult,
   TextDocumentPositionParams,
+  ReferenceParams,
+  DocumentSymbolParams,
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
@@ -16,6 +18,9 @@ import { CompletionProvider } from "./completionProvider";
 import { HoverProvider } from "./hoverProvider";
 import { SignatureHelpProvider } from "./signatureHelpProvider";
 import { DiagnosticsProvider } from "./diagnosticsProvider";
+import { DocumentSymbolProvider } from "./documentSymbolProvider";
+import { DefinitionProvider } from "./definitionProvider";
+import { ReferencesProvider } from "./referencesProvider";
 import { FunctionMetadata } from "./types";
 
 // Create server connection
@@ -36,6 +41,9 @@ let completionProvider: CompletionProvider;
 let hoverProvider: HoverProvider;
 let signatureHelpProvider: SignatureHelpProvider;
 let diagnosticsProvider: DiagnosticsProvider;
+let documentSymbolProvider: DocumentSymbolProvider;
+let definitionProvider: DefinitionProvider;
+let referencesProvider: ReferencesProvider;
 
 // Initialize server
 connection.onInitialize((params: InitializeParams) => {
@@ -64,6 +72,9 @@ connection.onInitialize((params: InitializeParams) => {
       signatureHelpProvider: {
         triggerCharacters: ["(", ","],
       },
+      definitionProvider: true,
+      referencesProvider: true,
+      documentSymbolProvider: true,
     },
   };
 
@@ -96,8 +107,7 @@ connection.onInitialized(() => {
   resourceLoader.load((msg) => connection.console.log(msg));
 
   // Initialize service providers
-  const getUserFunctions = (uri: string) =>
-    userDefinedFunctions.get(uri) || [];
+  const getUserFunctions = (uri: string) => userDefinedFunctions.get(uri) || [];
 
   completionProvider = new CompletionProvider(
     resourceLoader.getFunctions(),
@@ -117,6 +127,15 @@ connection.onInitialized(() => {
   diagnosticsProvider = new DiagnosticsProvider(
     resourceLoader.getParser(),
     hasDiagnosticRelatedInformationCapability
+  );
+
+  documentSymbolProvider = new DocumentSymbolProvider(getUserFunctions);
+
+  definitionProvider = new DefinitionProvider(getUserFunctions);
+
+  referencesProvider = new ReferencesProvider(
+    resourceLoader.getFunctions(),
+    getUserFunctions
   );
 });
 
@@ -176,6 +195,33 @@ connection.onSignatureHelp((params: TextDocumentPositionParams) => {
 
   const offset = document.offsetAt(params.position);
   return signatureHelpProvider.provide(document, offset);
+});
+
+connection.onDocumentSymbol((params: DocumentSymbolParams) => {
+  const document = documents.get(params.textDocument.uri);
+  if (!document) return [];
+
+  return documentSymbolProvider.provide(document);
+});
+
+connection.onDefinition((params: TextDocumentPositionParams) => {
+  const document = documents.get(params.textDocument.uri);
+  if (!document) return null;
+
+  const offset = document.offsetAt(params.position);
+  return definitionProvider.provide(document, offset);
+});
+
+connection.onReferences((params: ReferenceParams) => {
+  const document = documents.get(params.textDocument.uri);
+  if (!document) return [];
+
+  const offset = document.offsetAt(params.position);
+  return referencesProvider.provide(
+    document,
+    offset,
+    params.context.includeDeclaration
+  );
 });
 
 connection.onDidChangeWatchedFiles((_change) => {
